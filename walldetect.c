@@ -6,13 +6,28 @@
 #include <SoftwareSerial.h>
 #include <MeAuriga.h>
 
+MeUltrasonicSensor ultrasonic_7(7);
 MeLightSensor lightsensor_12(12);
+MeLineFollower linefollower_9(9);
 MeEncoderOnBoard Encoder_1(SLOT1);
 MeEncoderOnBoard Encoder_2(SLOT2);
-MeUltrasonicSensor ultrasonic_7(7);
-MeLineFollower linefollower_10(10);
 
 float wall = 0;
+float WallDetected = 0;
+float DistToWall = 0;
+float Duration = 0;
+float RoomSize = 0;
+float CmPerSecond = 0;
+float Speed = 0;
+
+void detectWall (){
+    WallDetected = 0;
+    if(ultrasonic_7.distanceCm() < 25){
+        WallDetected = 1;
+
+    }
+
+}
 
 void isr_process_encoder1(void)
 {
@@ -50,48 +65,110 @@ void move(int direction, int speed)
   Encoder_1.setTarPWM(leftSpeed);
   Encoder_2.setTarPWM(rightSpeed);
 }
+void lineFollow (){
+    while(1) {
+        while(!(linefollower_9.readSensors() > 0))
+        {
+          _loop();
+
+          move(1, 30 / 100.0 * 255);
+          _delay(0.1);
+          move(1, 0);
+          if(ultrasonic_7.distanceCm() < 25){
+              turnRight();
+              detectWall();
+              if(WallDetected == 1.000000){
+                  turnAround();
+                  detectWall();
+                  if(WallDetected == 1.000000){
+                      turnLeft();
+
+                  }
+
+              }
+
+          }
+
+        }
+        if(linefollower_9.readSensors() == 1.000000){
+            nudgeLeft();
+
+        }
+        if(linefollower_9.readSensors() == 2.000000){
+            nudgeRight();
+
+        }
+
+        _loop();
+    }
+
+}
+void nudgeLeft (){
+    Encoder_1.setTarPWM(0);
+    Encoder_2.setTarPWM(0);
+    _delay(0.5);
+    while(!(linefollower_9.readSensors() == 0.000000))
+    {
+      _loop();
+
+      move(3, 15 / 100.0 * 255);
+      _delay(0.1);
+      move(3, 0);
+
+    }
+    lineFollow();
+
+}
+void turnLeft (){
+    Encoder_1.setTarPWM(0);
+    Encoder_2.setTarPWM(0);
+    _delay(0.5);
+
+    move(3, 100 / 100.0 * 255);
+    _delay(1.5);
+    move(3, 0);
+    _delay(1);
+    lineFollow();
+
+}
+void nudgeRight (){
+    Encoder_1.setTarPWM(0);
+    Encoder_2.setTarPWM(0);
+    _delay(0.5);
+    while(!(linefollower_9.readSensors() == 0.000000))
+    {
+      _loop();
+
+      move(4, 15 / 100.0 * 255);
+      _delay(0.1);
+      move(4, 0);
+
+    }
+    lineFollow();
+
+}
 void turnRight (){
     Encoder_1.setTarPWM(0);
     Encoder_2.setTarPWM(0);
     _delay(0.5);
 
-    move(4, 50 / 100.0 * 255);
-    _delay(2);
+    move(4, 100 / 100.0 * 255);
+    _delay(1.5);
     move(4, 0);
     _delay(1);
-    moveForward();
+    lineFollow();
 
 }
+void turnAround (){
+    Encoder_1.setTarPWM(0);
+    Encoder_2.setTarPWM(0);
+    _delay(0.5);
 
-void moveForward (){
-    wall = 1;
-    while(!(ultrasonic_7.distanceCm() < 25))
-    {
-      _loop();
-
-      move(1, 50 / 100.0 * 255);
-      _delay(1);
-      move(1, 0);
-
-    }
-    turnRight();
-
-}
-void followLine (){
-    if(linefollower_10.readSensors() > 0){
-
-        move(1, 50 / 100.0 * 255);
-        _delay(0.5);
-        move(1, 0);
-
-    }else{
-
-        move(2, 50 / 100.0 * 255);
-        _delay(1);
-        move(2, 0);
-
-    }
-    followLine();
+    move(3, 50 / 100.0 * 255);
+    _delay(5);
+    move(3, 0);
+    _delay(1);
+    lineFollow();
 
 }
 
@@ -111,7 +188,8 @@ void setup() {
   TCCR2B = _BV(CS21);
   attachInterrupt(Encoder_1.getIntNum(), isr_process_encoder1, RISING);
   attachInterrupt(Encoder_2.getIntNum(), isr_process_encoder2, RISING);
-  followLine();
+
+  lineFollow();
 
 }
 
