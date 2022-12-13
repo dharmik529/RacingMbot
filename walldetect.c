@@ -7,6 +7,7 @@
 #include <MeAuriga.h>
 
 MeUltrasonicSensor ultrasonic_7(7);
+MeRGBLed rgbled_0(0, 12);
 MeLightSensor lightsensor_12(12);
 MeLineFollower linefollower_9(9);
 MeEncoderOnBoard Encoder_1(SLOT1);
@@ -103,6 +104,26 @@ void lineFollow (){
     }
 
 }
+void turnLeft (){
+    Encoder_1.setTarPWM(0);
+    Encoder_2.setTarPWM(0);
+    _delay(0.5);
+
+    move(3, 40 / 100.0 * 255);
+    _delay(0.5);
+    move(3, 0);
+    while(!(linefollower_9.readSensors() == 0.000000))
+    {
+      _loop();
+
+      move(3, 40 / 100.0 * 255);
+      _delay(0.5);
+      move(3, 0);
+
+    }
+    lineFollow();
+
+}
 void nudgeLeft (){
     Encoder_1.setTarPWM(0);
     Encoder_2.setTarPWM(0);
@@ -111,7 +132,7 @@ void nudgeLeft (){
     {
       _loop();
 
-      move(3, 15 / 100.0 * 255);
+      move(3, 30 / 100.0 * 255);
       _delay(0.1);
       move(3, 0);
 
@@ -119,15 +140,23 @@ void nudgeLeft (){
     lineFollow();
 
 }
-void turnLeft (){
+void turnRight (){
     Encoder_1.setTarPWM(0);
     Encoder_2.setTarPWM(0);
     _delay(0.5);
 
-    move(3, 100 / 100.0 * 255);
-    _delay(1.5);
-    move(3, 0);
-    _delay(1);
+    move(4, 40 / 100.0 * 255);
+    _delay(0.5);
+    move(4, 0);
+    while(!(linefollower_9.readSensors() == 0.000000))
+    {
+      _loop();
+
+      move(4, 40 / 100.0 * 255);
+      _delay(0.5);
+      move(4, 0);
+
+    }
     lineFollow();
 
 }
@@ -139,7 +168,7 @@ void nudgeRight (){
     {
       _loop();
 
-      move(4, 15 / 100.0 * 255);
+      move(4, 30 / 100.0 * 255);
       _delay(0.1);
       move(4, 0);
 
@@ -147,27 +176,9 @@ void nudgeRight (){
     lineFollow();
 
 }
-void turnRight (){
-    Encoder_1.setTarPWM(0);
-    Encoder_2.setTarPWM(0);
-    _delay(0.5);
-
-    move(4, 100 / 100.0 * 255);
-    _delay(1.5);
-    move(4, 0);
-    _delay(1);
-    lineFollow();
-
-}
 void turnAround (){
-    Encoder_1.setTarPWM(0);
-    Encoder_2.setTarPWM(0);
-    _delay(0.5);
-
-    move(3, 50 / 100.0 * 255);
-    _delay(5);
-    move(3, 0);
-    _delay(1);
+    turnRight();
+    turnRight();
     lineFollow();
 
 }
@@ -181,6 +192,8 @@ void _delay(float seconds) {
 }
 
 void setup() {
+  rgbled_0.setpin(44);
+  rgbled_0.fillPixelsBak(0, 2, 1);
   randomSeed((unsigned long)(lightsensor_12.read() * 123456));
   TCCR1A = _BV(WGM10);
   TCCR1B = _BV(CS11) | _BV(WGM12);
@@ -189,6 +202,11 @@ void setup() {
   attachInterrupt(Encoder_1.getIntNum(), isr_process_encoder1, RISING);
   attachInterrupt(Encoder_2.getIntNum(), isr_process_encoder2, RISING);
 
+  rgbled_0.setColor(0,255,255,255);
+  rgbled_0.show();
+  _delay(1);
+  rgbled_0.setColor(0,0,0,0);
+  rgbled_0.show();
   lineFollow();
 
 }
